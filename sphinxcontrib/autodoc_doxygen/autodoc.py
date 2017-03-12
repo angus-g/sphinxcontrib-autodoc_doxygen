@@ -23,10 +23,11 @@ class DoxygenDocumenter(Documenter):
         'members': members_option,
     }
 
-    def __init__(self, directive, name, indent=u'', id=None):
+    def __init__(self, directive, name, indent=u'', id=None, brief=False):
         super(DoxygenDocumenter, self).__init__(directive, name, indent)
         if id is not None:
             self.parse_id(id)
+        self.brief = brief
 
     def parse_id(self, id):
         return False
@@ -147,8 +148,11 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
         return self.fullname
 
     def get_doc(self, encoding):
-        detaileddescription = self.object.find('detaileddescription')
-        doc = [format_xml_paragraph(detaileddescription)]
+        if self.brief:
+            description = self.object.find('briefdescription')
+        else:
+            description = self.object.find('detaileddescription')
+        doc = [format_xml_paragraph(description)]
         return doc
 
     def get_object_members(self, want_all):
