@@ -51,7 +51,7 @@ def _import_by_name(name, i=0):
     if '::' in name:
         xpath_query = (
             './/compoundname[text()="%s"]/../'
-            'sectiondef[@kind="public-func"]/memberdef[@kind="function"]/'
+            'sectiondef[@kind="func"]/memberdef[@kind="function"]/'
             'name[text()="%s"]/..') % tuple(name.rsplit('::', 1))
         m = root.xpath(xpath_query)
         if len(m) > 0:
