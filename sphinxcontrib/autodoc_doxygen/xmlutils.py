@@ -51,6 +51,8 @@ class _DoxygenXmlParagraphFormatter(object):
                 name_node = ref.find('./name')
                 real_name = name_node.text if name_node is not None else ''
             else:
+                self.lines[-1] += '(unimplemented link)' + node.text
+                return
                 raise NotImplementedError(ref.tag)
         else:
             real_name = None
@@ -65,15 +67,45 @@ class _DoxygenXmlParagraphFormatter(object):
 
         self.lines[-1] += ''.join(val)
 
-    def visit_para(self, node):
-        if node.text is not None:
+    def para_text(self, text):
+        if text is not None:
             if self.continue_line:
-                self.lines[-1] += node.text
+                self.lines[-1] += text
             else:
-                self.lines.append(node.text)
-        self.generic_visit(node)
+                self.lines.append(text.lstrip())
+
+    def visit_para(self, node):
+        self.para_text(node.text)
+
+        # visit children and append tail
+        for child in node.getchildren():
+            self.visit(child)
+            self.para_text(child.tail)
+            self.continue_line = True
+
         self.lines.append('')
         self.continue_line = False
+
+    def visit_formula(self, node):
+        text = node.text.strip()
+
+        # detect inline or block math
+        if text.startswith('\\[') or not text.startswith('$'):
+            if text.startswith('\\['):
+                text = text[2:-2]
+
+            self.lines.append('')
+            self.lines.append('.. math:: ' + text)
+            self.lines.append('')
+            self.continue_line = False
+        else:
+            inline = ':math:`' + node.text.strip()[1:-1].strip() + '`'
+            if self.continue_line:
+                self.lines[-1] += inline
+            else:
+                self.lines.append(inline)
+
+            self.continue_line = True
 
     def visit_parametername(self, node):
         if 'direction' in node.attrib:
@@ -95,6 +127,29 @@ class _DoxygenXmlParagraphFormatter(object):
             self.continue_line = True
         self.generic_visit(node)
 
+    def visit_sect(self, node, char):
+        """Generic visit section"""
+        title_node = node.find('title')
+        if title_node is not None:
+            title = title_node.text
+            self.lines.append(title)
+            self.lines.append(len(title) * char)
+            self.lines.append('')
+
+        self.generic_visit(node)
+
+    def visit_sect1(self, node):
+        self.visit_sect(node, '=')
+
+    def visit_sect2(self, node):
+        self.visit_sect(node, '-')
+
+    def visit_sect3(self, node):
+        self.visit_sect(node, '^')
+
+    def visit_sect4(self, node):
+        self.visit_sect(node, '"')
+
     def visit_listitem(self, node):
         self.lines.append('   - ')
         self.continue_line = True
@@ -115,7 +170,8 @@ class _DoxygenXmlParagraphFormatter(object):
         c = node.find('preformatted')
         if c is not None:
             return self.visit_preformatted(c)
-        return self.visit_preformatted(node)
+
+        self.lines[-1] += '``' + node.text + '``'
 
     def visit_xrefsect(self, node):
         if node.find('xreftitle').text == 'Deprecated':
@@ -126,3 +182,74 @@ class _DoxygenXmlParagraphFormatter(object):
 
     def visit_subscript(self, node):
         self.lines[-1] += '\ :sub:`%s` %s' % (node.text, node.tail)
+
+    def visit_table(self, node):
+        # save the number of columns
+        cols = int(node.get('cols'))
+        table = []
+        # save the current output
+        lines = self.lines
+
+        # get width of each column
+        widths = [0] * cols
+
+        # build up the table contents
+        for row_node in node.findall('row'):
+            row = []
+            for i, entry in enumerate(row_node.getchildren()):
+                self.lines = ['']
+                self.generic_visit(entry)
+                row.append(self.lines)
+
+                # find width of this entry (including leading and trailing space)
+                widths[i] = max(widths[i], max([len(line) for line in self.lines]) + 2)
+
+            table.append(row)
+
+        def append_row(row):
+            # find number of lines in row
+            num_lines = max([len(e) for e in row])
+            lines = []
+
+            for k in range(num_lines):
+                line = '|'
+                for i, e in enumerate(row):
+                    if k < len(e):
+                        # this is a valid line
+                        line += ' ' + e[k]
+                        # pad rest of line
+                        line += ' ' * (widths[i] - len(e[k]) - 1)
+                    else:
+                        # invalid line, just fill with spaces
+                        line += ' ' * widths[i]
+
+                    line += '|'
+
+                lines.append(line)
+
+            return lines
+
+        self.lines = lines
+        # start with a blank
+        self.lines.append('')
+
+        # usual separator line
+        sep = '+'
+        for width in widths:
+            sep += '-' * width
+            sep += '+'
+
+        self.lines.append(sep)
+
+        # header row
+        self.lines.extend(append_row(table[0]))
+        # header separator uses '=' instead of '-'
+        self.lines.append(sep.replace('-', '='))
+
+        # loop over body rows
+        for row in table[1:]:
+            self.lines.extend(append_row(row))
+            self.lines.append(sep)
+
+        # end with a blank
+        self.lines.append('')
