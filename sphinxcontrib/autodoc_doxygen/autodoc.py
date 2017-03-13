@@ -18,6 +18,7 @@ class DoxygenDocumenter(Documenter):
     objname = None   # example: "NonbondedForce"  or "methodName"
     objpath = []     # always the empty list
     object = None    # the xml node for the object
+    titles_allowed = True
 
     option_spec = {
         'members': members_option,
@@ -105,6 +106,43 @@ class DoxygenDocumenter(Documenter):
         self.env.temp_data['autodoc:module'] = None
         self.env.temp_data['autodoc:class'] = None
 
+    def generate(self, more_content=None, real_modname=None,
+                 check_module=False, all_members=False):
+        if not self.parse_name():
+            self.directive.warn("don't know which module to import for autodocumenting %r" % self.name)
+            return
+
+        if not self.import_object():
+            return
+
+        # we can't import anything, since we're not Python
+        self.analyzer = None
+
+        if check_module and not self.check_module():
+            return
+
+        sourcename = self.get_sourcename()
+
+        # start with blank line
+        self.add_line(u'', sourcename)
+        title = '%s module reference' % self.format_name()
+
+        # add title
+        self.add_line(u'='*len(title), sourcename)
+        self.add_line(title, sourcename)
+        self.add_line(u'='*len(title), sourcename)
+        self.add_line(u'', sourcename)
+
+        # brief description
+        self.brief = True
+        self.add_content(None)
+
+        # member doc
+        self.document_members(all_members)
+
+        # detailed description
+        self.brief = False
+        self.add_content(more_content)
 
 class DoxygenClassDocumenter(DoxygenDocumenter):
     objtype = 'doxyclass'
