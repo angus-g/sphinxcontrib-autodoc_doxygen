@@ -106,43 +106,6 @@ class DoxygenDocumenter(Documenter):
         self.env.temp_data['autodoc:module'] = None
         self.env.temp_data['autodoc:class'] = None
 
-    def generate(self, more_content=None, real_modname=None,
-                 check_module=False, all_members=False):
-        if not self.parse_name():
-            self.directive.warn("don't know which module to import for autodocumenting %r" % self.name)
-            return
-
-        if not self.import_object():
-            return
-
-        # we can't import anything, since we're not Python
-        self.analyzer = None
-
-        if check_module and not self.check_module():
-            return
-
-        sourcename = self.get_sourcename()
-
-        # start with blank line
-        self.add_line(u'', sourcename)
-        title = '%s module reference' % self.format_name()
-
-        # add title
-        self.add_line(u'='*len(title), sourcename)
-        self.add_line(title, sourcename)
-        self.add_line(u'='*len(title), sourcename)
-        self.add_line(u'', sourcename)
-
-        # brief description
-        self.brief = True
-        self.add_content(None)
-
-        # member doc
-        self.document_members(all_members)
-
-        # detailed description
-        self.brief = False
-        self.add_content(more_content)
 
 class DoxygenClassDocumenter(DoxygenDocumenter):
     objtype = 'doxyclass'
@@ -216,6 +179,52 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
         super().document_members(all_members=all_members)
         # Uncomment to view the generated rst for the class.
         # print('\n'.join(self.directive.result))
+
+    def generate(self, more_content=None, real_modname=None,
+                 check_module=False, all_members=False):
+        if not self.parse_name():
+            self.directive.warn("don't know which module to import for autodocumenting %r" % self.name)
+            return
+
+        if not self.import_object():
+            return
+
+        self.real_modname = real_modname or self.get_real_modname()
+
+        # we can't import anything, since we're not Python
+        self.analyzer = None
+
+        if check_module and not self.check_module():
+            return
+
+        sourcename = self.get_sourcename()
+
+        # start with blank line
+        self.add_line(u'', sourcename)
+        title = '%s module reference' % self.format_name()
+
+        # add title
+        self.add_line(u'='*len(title), sourcename)
+        self.add_line(title, sourcename)
+        self.add_line(u'='*len(title), sourcename)
+        self.add_line(u'', sourcename)
+
+        # brief description
+        self.brief = True
+        self.add_content(None)
+
+        # we want a brief description of types/functions here
+        self.document_members(all_members)
+
+        # detailed description
+        self.add_line(u'', sourcename)
+        self.add_line(u'.. rubric:: Detailed Description', sourcename)
+        self.add_line(u'', sourcename)
+        self.brief = False
+        self.add_content(more_content)
+
+        # member doc
+        self.document_members(all_members)
 
 
 class DoxygenMethodDocumenter(DoxygenDocumenter):
