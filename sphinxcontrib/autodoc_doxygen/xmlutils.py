@@ -113,13 +113,14 @@ class _DoxygenXmlParagraphFormatter(object):
         else:
             direction = ''
 
-        self.lines.append('**%s** -- %s' % (
-            node.text, direction))
+        #self.lines.append('**%s** -- %s' % (
+            #node.text, direction))
+        self.lines.append(':param %s: %s' % (node.text, direction))
         self.continue_line = True
 
     def visit_parameterlist(self, node):
         lines = [l for l in type(self)().generic_visit(node).lines if l is not '']
-        self.lines.extend([':parameters:', ''] + ['* %s' % l for l in lines] + [''])
+        self.lines.extend([''] + lines + [''])
 
     def visit_simplesect(self, node):
         if node.get('kind') == 'return':

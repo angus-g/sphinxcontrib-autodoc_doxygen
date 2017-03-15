@@ -58,15 +58,6 @@ class DoxygenDocumenter(Documenter):
 
         return True
 
-    def add_directive_header(self, sig):
-        """Add the directive header and options to the generated content."""
-        domain = getattr(self, 'domain', 'cpp')
-        directive = getattr(self, 'directivetype', self.objtype)
-        name = self.format_name()
-        sourcename = self.get_sourcename()
-        self.add_line(u'.. %s:%s:: %s%s' % (domain, directive, name, sig),
-                      sourcename)
-
     def document_members(self, all_members=False):
         """Generate reST for member documentation.
         If *all_members* is True, do all members, else those given by
@@ -94,7 +85,8 @@ class DoxygenDocumenter(Documenter):
             # prefer the documenter with the highest priority
             classes.sort(key=lambda cls: cls.priority)
 
-            documenter = classes[-1](self.directive, mname, indent=self.indent, id=member.get('id'))
+            documenter = classes[-1](self.directive, mname, indent=self.indent,
+                                     id=member.get('id'), brief=self.brief)
             memberdocumenters.append((documenter, isattr))
 
         for documenter, isattr in memberdocumenters:
@@ -157,7 +149,7 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
         return doc
 
     def get_object_members(self, want_all):
-        all_members = self.object.xpath('.//sectiondef[@kind="public-func" '
+        all_members = self.object.xpath('.//sectiondef[@kind="func" '
             'or @kind="public-static-func"]/memberdef[@kind="function"]')
 
         if want_all:
@@ -230,7 +222,7 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
 class DoxygenMethodDocumenter(DoxygenDocumenter):
     objtype = 'doxymethod'
     directivetype = 'function'
-    domain = 'cpp'
+    domain = 'f'
     priority = 100
 
     @classmethod
@@ -238,6 +230,17 @@ class DoxygenMethodDocumenter(DoxygenDocumenter):
         if ET.iselement(member) and member.tag == 'memberdef' and member.get('kind') == 'function':
             return True
         return False
+
+    def add_directive_header(self, sig):
+        """Add the directive header and options to the generated content."""
+        domain = self.domain
+        # use the <type> field, without other information (e.g. public)
+        typefield = self.object.find('type').text
+        directive = 'subroutine' if 'subroutine' in typefield else 'function'
+        name = self.format_name()
+        sourcename = self.get_sourcename()
+        self.add_line(u'.. %s:%s:: %s%s' % (domain, directive, name, sig),
+                      sourcename)
 
     def parse_id(self, id):
         xp = './/*[@id="%s"]' % id
@@ -267,8 +270,11 @@ class DoxygenMethodDocumenter(DoxygenDocumenter):
         return True
 
     def get_doc(self, encoding):
-        detaileddescription = self.object.find('detaileddescription')
-        doc = [format_xml_paragraph(detaileddescription)]
+        doc = [format_xml_paragraph(self.object.find('briefdescription'))]
+        # add parameter documentation (in detaileddescription) for main function documentation
+        if not self.brief:
+            doc += [format_xml_paragraph(self.object.find('detaileddescription'))]
+
         return doc
 
     def format_name(self):
