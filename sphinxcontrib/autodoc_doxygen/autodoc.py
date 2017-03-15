@@ -25,7 +25,7 @@ class DoxygenDocumenter(Documenter):
     }
 
     def __init__(self, directive, name, indent=u'', id=None, brief=False):
-        super(DoxygenDocumenter, self).__init__(directive, name, indent)
+        super().__init__(directive, name, indent)
         if id is not None:
             self.parse_id(id)
         self.brief = brief
@@ -213,7 +213,7 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
         return ret
 
     def document_members(self, all_members=False):
-        super(DoxygenClassDocumenter, self).document_members(all_members=all_members)
+        super().document_members(all_members=all_members)
         # Uncomment to view the generated rst for the class.
         # print('\n'.join(self.directive.result))
 
