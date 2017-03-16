@@ -10,11 +10,12 @@ from jinja2.sandbox import SandboxedEnvironment
 from sphinx.jinja2glue import BuiltinTemplateLoader
 from sphinx.util.osutil import ensuredir
 
-from . import import_by_name
+from . import import_by_name, get_doxygen_root
 
 
 def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
-                              base_path=None, builder=None, template_dir=None):
+                              base_path=None, builder=None, template_dir=None,
+                              toctree=None):
 
     showed_sources = list(sorted(sources))
     if len(showed_sources) > 20:
@@ -47,13 +48,8 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
     # keep track of new files
     new_files = []
 
-    for name, path, template_name in sorted(set(items), key=str):
-        if path is None:
-            # The corresponding autosummary:: directive did not have
-            # a :toctree: option
-            continue
-
-        path = output_dir or os.path.abspath(path)
+    for name, template_name in sorted(set(items), key=str):
+        path = output_dir or os.path.abspath(toctree)
         ensuredir(path)
 
         try:
@@ -107,7 +103,7 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
     if new_files:
         generate_autosummary_docs(new_files, output_dir=output_dir,
                                   suffix=suffix, base_path=base_path, builder=builder,
-                                  template_dir=template_dir)
+                                  template_dir=template_dir, toctree=toctree)
 
 
 def find_autosummary_in_files(filenames):
@@ -115,13 +111,10 @@ def find_autosummary_in_files(filenames):
 
     See `find_autosummary_in_lines`.
     """
-    documented = []
-    for filename in filenames:
-        with codecs.open(filename, 'r', encoding='utf-8',
-                         errors='ignore') as f:
-            lines = f.read().splitlines()
-            documented.extend(find_autosummary_in_lines(lines,
-                                                        filename=filename))
+    # todo: break when this doesn't exist
+    modules = get_doxygen_root().findall('./compound[@kind="namespace"]')
+    # list of (name, toctree, template)
+    documented = [(m.find('name').text, None) for m in modules]
     return documented
 
 
@@ -192,6 +185,7 @@ def find_autosummary_in_lines(lines, module=None, filename=None):
 
 def process_generate_options(app):
     genfiles = app.config.autosummary_generate
+    toctree = app.config.autosummary_toctree
 
     if genfiles and not hasattr(genfiles, '__len__'):
         env = app.builder.env
@@ -206,4 +200,4 @@ def process_generate_options(app):
                 for genfile in genfiles]
 
     generate_autosummary_docs(genfiles, builder=app.builder,
-                              suffix=ext, base_path=app.srcdir)
+                              suffix=ext, base_path=app.srcdir, toctree=toctree)

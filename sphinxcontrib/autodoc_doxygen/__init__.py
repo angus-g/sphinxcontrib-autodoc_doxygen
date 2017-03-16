@@ -50,7 +50,8 @@ def setup(app):
 
     app.add_autodocumenter(DoxygenClassDocumenter)
     app.add_autodocumenter(DoxygenMethodDocumenter)
-    app.add_config_value("doxygen_xml", "", True)
+    app.add_config_value("doxygen_xml", "", 'env')
+    app.add_config_value('autosummary_toctree', '', 'html')
 
     app.add_directive('autodoxysummary', DoxygenAutosummary)
     app.add_directive('autodoxyenum', DoxygenAutoEnum)
