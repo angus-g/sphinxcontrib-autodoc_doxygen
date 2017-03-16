@@ -40,34 +40,51 @@ class _DoxygenXmlParagraphFormatter(object):
         return self
 
     def visit_ref(self, node):
+        # find target node
         refid = node.get('refid')
+        kind = None
+
         if node.get('kindref') == 'member':
             ref = get_doxygen_root().find('./compounddef/sectiondef/memberdef[@id="%s"]' % refid)
+            # only set the kind if we find a function, otherwise it might be
+            # a documentation reference
+            if ref is not None:
+                kind = 'func'
         elif node.get('kindref') == 'compound':
             ref = get_doxygen_root().find('./compounddef[@id="%s"]' % refid)
+            kind = 'mod'
         else:
+            # we probably don't get here
+            print('warning: slow ref search!')
             ref = get_doxygen_root().find('.//*[@id="%s"]' % refid)
 
+        # get name of target
         if ref:
-            if ref.tag == 'memberdef':
-                parent = ref.xpath('./ancestor::compounddef/compoundname')[0].text
-                name = ref.find('./name').text
-                real_name = parent + '::' + name
-            elif ref.tag in ('compounddef', 'enumvalue'):
-                name_node = ref.find('./name')
-                real_name = name_node.text if name_node is not None else ''
+            name_node = ref.find('./name')
+            if name_node is not None:
+                real_name = name_node.text
             else:
                 self.lines[-1] += '(unimplemented link)' + node.text
                 return
-                raise NotImplementedError(ref.tag)
         else:
+            # couldn't find link
             real_name = None
 
-        val = [':cpp:any:`', node.text]
-        if real_name:
+        if kind is None:
+            # section link, we hope!
+            val = ['`']
+        else:
+            val = [':f:%s:`' % kind]
+
+        val.append(node.text)
+        if real_name is not None:
             val.extend((' <', real_name, '>`'))
         else:
             val.append('`')
+
+        if kind is None:
+            # convert into a proper link
+            val.append('_')
 
         self.lines[-1] += ''.join(val)
 
