@@ -177,11 +177,9 @@ class _DoxygenXmlParagraphFormatter(object):
         self.lines[-1] += '``' + node.text + '``'
 
     def visit_xrefsect(self, node):
-        if node.find('xreftitle').text == 'Deprecated':
-            sublines = type(self)().generic_visit(node).lines
-            self.lines.extend(['.. admonition:: Deprecated'] + ['   ' + s for s in sublines])
-        else:
-            raise ValueError(node)
+        title = node.find('xreftitle').text
+        sublines = type(self)().generic_visit(node).lines
+        self.lines.extend(['.. admonition:: %s' % title] + ['   ' + s for s in sublines])
 
     def visit_subscript(self, node):
         self.lines[-1] += '\ :sub:`%s` %s' % (node.text, node.tail)
