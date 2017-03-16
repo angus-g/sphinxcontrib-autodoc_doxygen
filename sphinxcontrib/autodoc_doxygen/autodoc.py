@@ -1,5 +1,7 @@
 from __future__ import print_function, absolute_import, division
 
+import re
+
 from six import itervalues
 from lxml import etree as ET
 from sphinx.ext.autodoc import Documenter, AutoDirective, members_option, ALL
@@ -285,24 +287,18 @@ class DoxygenMethodDocumenter(DoxygenDocumenter):
         return doc
 
     def format_name(self):
-        def text(el):
-            if el.text is not None:
-                return el.text
-            return ''
-
-        def tail(el):
-            if el.tail is not None:
-                return el.tail
-            return ''
-
-        rtype_el = self.object.find('type')
-        rtype_el_ref = rtype_el.find('ref')
-        if rtype_el_ref is not None:
-            rtype = text(rtype_el) + text(rtype_el_ref) + tail(rtype_el_ref)
+        # we just want to get the bare part of the "type" field
+        # i.e. subroutine or <type> function
+        typefield = self.object.find('type').text
+        if typefield is None:
+            rtype = None
+        elif 'function' in typefield:
+            # get the return type
+            rtype = re.search(r'(\S+)\s+function', typefield).group(0)
         else:
-            rtype = rtype_el.text
+            rtype = 'subroutine' if 'subroutine' in typefield else 'unknown'
 
-        signame = (rtype and (rtype + ' ') or '') + self.objname
+        signame = ((rtype + ' ') if rtype is not None else '') + self.objname
         return self.format_template_name() + signame
 
     def format_template_name(self):
