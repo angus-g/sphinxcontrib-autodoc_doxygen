@@ -68,8 +68,6 @@ class _DoxygenXmlParagraphFormatter(object):
             val.extend((' <', real_name, '>`'))
         else:
             val.append('`')
-        if node.tail is not None:
-            val.append(node.tail)
 
         self.lines[-1] += ''.join(val)
 
