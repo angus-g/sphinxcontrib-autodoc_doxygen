@@ -24,8 +24,10 @@ class DoxygenDocumenter(Documenter):
         'members': members_option,
     }
 
-    def __init__(self, directive, name, indent=u'', id=None, brief=False):
+    def __init__(self, directive, name, indent=u'', id=None, brief=False, parent=None):
         super().__init__(directive, name, indent)
+
+        self.parent = parent
         if id is not None:
             self.parse_id(id)
         self.brief = brief
@@ -86,7 +88,8 @@ class DoxygenDocumenter(Documenter):
             classes.sort(key=lambda cls: cls.priority)
 
             documenter = classes[-1](self.directive, mname, indent=self.indent,
-                                     id=member.get('id'), brief=self.brief)
+                                     id=member.get('id'), brief=self.brief,
+                                     parent=self.object)
             memberdocumenters.append((documenter, isattr))
 
         for documenter, isattr in memberdocumenters:
@@ -125,7 +128,7 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
 
         Returns True if successful, False if an error occurred.
         """
-        xpath_query = './/compoundname[text()="%s"]/..' % self.fullname
+        xpath_query = './compounddef/compoundname[text()="%s"]/..' % self.fullname
         match = get_doxygen_root().xpath(xpath_query)
         if len(match) != 1:
             raise ExtensionError('[autodoc_doxygen] could not find class (fullname="%s"). I tried'
@@ -249,8 +252,13 @@ class DoxygenMethodDocumenter(DoxygenDocumenter):
                       sourcename)
 
     def parse_id(self, id):
+        # try to search our parent node instead of the entire tree
+        parent = self.parent
+        if parent is None:
+            parent = get_doxygen_root()
+
         xp = './/*[@id="%s"]' % id
-        match = get_doxygen_root().xpath(xp)
+        match = parent.xpath(xp)
         if len(match) > 0:
             match = match[0]
             self.fullname = match.find('./definition').text.split()[-1]
@@ -266,14 +274,7 @@ class DoxygenMethodDocumenter(DoxygenDocumenter):
             # classname or method name
             return True
 
-        xpath_query = ('.//compoundname[text()="%s"]/../sectiondef[@kind="public-func"]'
-                       '/memberdef[@kind="function"]/name[text()="%s"]/..') % tuple(self.fullname.rsplit('::', 1))
-        match = get_doxygen_root().xpath(xpath_query)
-        if len(match) == 0:
-            raise ExtensionError('[autodoc_doxygen] could not find method (modname="%s", objname="%s"). I tried '
-                                 'the following xpath: "%s"' % (tuple(self.fullname.rsplit('::', 1)) + (xpath_query,)))
-        self.object = match[0]
-        return True
+        return False
 
     def get_doc(self, encoding):
         doc = [format_xml_paragraph(self.object.find('briefdescription'))]

@@ -50,7 +50,7 @@ def _import_by_name(name, i=0):
 
     if '::' in name:
         xpath_query = (
-            './/compoundname[text()="%s"]/../'
+            './compounddef/compoundname[text()="%s"]/../'
             'sectiondef[@kind="func"]/memberdef[@kind="function"]/'
             'name[text()="%s"]/..') % tuple(name.rsplit('::', 1))
         m = root.xpath(xpath_query)
@@ -59,17 +59,7 @@ def _import_by_name(name, i=0):
             full_name = '.'.join(name.rsplit('::', 1))
             return full_name, obj, full_name, ''
 
-        xpath_query = (
-            './/compoundname[text()="%s"]/../'
-            'sectiondef[@kind="public-type"]/memberdef[@kind="enum"]/'
-            'name[text()="%s"]/..') % tuple(name.rsplit('::', 1))
-        m = root.xpath(xpath_query)
-        if len(m) > 0:
-            obj = m[i]
-            full_name = '.'.join(name.rsplit('::', 1))
-            return full_name, obj, full_name, ''
-
-    xpath_query = ('.//compoundname[text()="%s"]/..' % name)
+    xpath_query = ('./compounddef/compoundname[text()="%s"]/..' % name)
     m = root.xpath(xpath_query)
     if len(m) > 0:
         obj = m[i]
