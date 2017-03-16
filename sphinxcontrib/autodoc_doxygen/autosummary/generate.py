@@ -69,10 +69,10 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
         if template_name is None:
             if obj.tag == 'compounddef' and obj.get('kind') == 'class':
                 template_name = 'doxyclass.rst'
-            elif obj.tag == 'compounddef' and obj.get('kind') == 'namespace':
+            elif obj.tag == 'compounddef' and obj.get('kind') in ['namespace', 'module']:
                 template_name = 'doxynamespace.rst'
             else:
-                raise NotImplementedError('No template for %s' % obj)
+                raise NotImplementedError('No template for %s (%s)' % (obj, obj.get('kind')))
 
         with open(fn, 'w') as f:
             template = template_env.get_template(template_name)
@@ -85,6 +85,7 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                 ns['methods'] = [e.text for e in obj.findall('.//sectiondef[@kind="func"]/memberdef[@kind="function"]/name')]
                 ns['objtype'] = 'namespace'
             else:
+                continue
                 raise NotImplementedError(obj)
 
             parts = name.split('::')
