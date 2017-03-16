@@ -235,10 +235,16 @@ class DoxygenMethodDocumenter(DoxygenDocumenter):
         """Add the directive header and options to the generated content."""
         domain = self.domain
         # use the <type> field, without other information (e.g. public)
-        typefield = self.object.find('type').text
-        directive = 'subroutine' if 'subroutine' in typefield else 'function'
         name = self.format_name()
         sourcename = self.get_sourcename()
+
+        typefield = self.object.find('type').text
+        if typefield is None:
+            print('ERROR: null typefield in %s %s' % (name, sourcename))
+            return
+
+        directive = 'subroutine' if 'subroutine' in typefield else 'function'
+
         self.add_line(u'.. %s:%s:: %s%s' % (domain, directive, name, sig),
                       sourcename)
 
