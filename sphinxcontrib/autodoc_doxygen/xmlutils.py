@@ -40,9 +40,15 @@ class _DoxygenXmlParagraphFormatter(object):
         return self
 
     def visit_ref(self, node):
-        ref = get_doxygen_root().findall('.//*[@id="%s"]' % node.get('refid'))
+        refid = node.get('refid')
+        if node.get('kindref') == 'member':
+            ref = get_doxygen_root().find('./compounddef/sectiondef/memberdef[@id="%s"]' % refid)
+        elif node.get('kindref') == 'compound':
+            ref = get_doxygen_root().find('./compounddef[@id="%s"]' % refid)
+        else:
+            ref = get_doxygen_root().find('.//*[@id="%s"]' % refid)
+
         if ref:
-            ref = ref[0]
             if ref.tag == 'memberdef':
                 parent = ref.xpath('./ancestor::compounddef/compoundname')[0].text
                 name = ref.find('./name').text
