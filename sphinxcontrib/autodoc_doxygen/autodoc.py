@@ -206,6 +206,10 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
         self.add_line(u'='*len(title), sourcename)
         self.add_line(u'', sourcename)
 
+        # module directive
+        self.add_line(u'.. f:module:: %s' % self.format_name(), sourcename)
+        self.add_line(u'', sourcename)
+
         # brief description
         self.brief = True
         self.add_content(None)
