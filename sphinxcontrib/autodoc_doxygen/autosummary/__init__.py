@@ -102,7 +102,8 @@ class DoxygenAutosummary(Autosummary):
                 continue
 
             self.result = ViewList()  # initialize for each documenter
-            documenter = get_documenter(obj, parent)(self, real_name, id=obj.get('id'), brief=True)
+            documenter = get_documenter(obj, parent)(self, real_name, id=obj.get('id'),
+                                                     brief=True, parent=obj.find('..'))
             if not documenter.parse_name():
                 self.warn('failed to parse name %s' % real_name)
                 items.append((display_name, '', '', real_name))
