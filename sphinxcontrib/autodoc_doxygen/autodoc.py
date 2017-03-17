@@ -150,6 +150,11 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
             description = self.object.find('briefdescription')
         else:
             description = self.object.find('detaileddescription')
+            # use the brief description if there's no content in the
+            # detailed description
+            if not len(description) and not description.text.strip():
+                description = self.object.find('briefdescription')
+
         doc = [format_xml_paragraph(description)]
         return doc
 
