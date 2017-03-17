@@ -159,6 +159,8 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
 
         if self.brief:
             doc.append(['`More...`_'])
+            # new line to separate from further content
+            doc.append([''])
 
         return doc
 
@@ -224,17 +226,15 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
 
         # brief description
         self.brief = True
-        self.add_content(None)
+        self.add_content(more_content)
 
         # we want a brief description of types/functions here
-        self.add_title('Functions/Subroutines', char='-')
-        self.document_members(all_members)
 
         # detailed description
         self.add_line(u'.. _`More...`:', sourcename)
         self.add_title('Detailed Description', char='-')
         self.brief = False
-        self.add_content(more_content)
+        self.add_content(None)
 
         # member doc
         self.add_title('Function/Subroutine Documentation', char='-')
