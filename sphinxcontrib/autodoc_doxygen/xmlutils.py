@@ -59,7 +59,7 @@ class _DoxygenXmlParagraphFormatter(object):
             ref = get_doxygen_root().find('.//*[@id="%s"]' % refid)
 
         # get name of target
-        if ref:
+        if ref is not None:
             if kind == 'func':
                 name_node = ref.find('./name')
             elif kind == 'mod':
