@@ -60,7 +60,11 @@ class _DoxygenXmlParagraphFormatter(object):
 
         # get name of target
         if ref:
-            name_node = ref.find('./name')
+            if kind == 'func':
+                name_node = ref.find('./name')
+            elif kind == 'mod':
+                name_node = ref.find('./compoundname')
+
             if name_node is not None:
                 real_name = name_node.text
             else:
