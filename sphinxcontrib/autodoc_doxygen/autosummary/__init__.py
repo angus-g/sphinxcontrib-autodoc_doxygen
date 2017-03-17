@@ -181,10 +181,9 @@ class DoxygenAutosummary(Autosummary):
         """
         table, table_spec, append_row = self.get_tablespec()
         for name, sig, summary, real_name in items:
-            qualifier = 'cpp:any'
-            # required for cpp autolink
-            full_name = real_name.replace('.', '::')
-            col1 = ':%s:`%s <%s>`' % (qualifier, name, full_name)
+            # TODO: we'll have to resolve the type of link here, awkward!
+            qualifier = 'f:func'
+            col1 = ':%s:`%s`' % (qualifier, name)
             col2 = summary
             append_row(col1, col2)
 
