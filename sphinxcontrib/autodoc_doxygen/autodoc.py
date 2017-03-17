@@ -156,6 +156,10 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
                 description = self.object.find('briefdescription')
 
         doc = [format_xml_paragraph(description)]
+
+        if self.brief:
+            doc.append(['`More...`_'])
+
         return doc
 
     def get_object_members(self, want_all):
@@ -182,6 +186,15 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
         # Uncomment to view the generated rst for the class.
         # print('\n'.join(self.directive.result))
 
+    def add_title(self, title, char='='):
+        sourcename = self.get_sourcename()
+
+        self.add_line(u'', sourcename)
+        self.add_line(char * len(title), sourcename)
+        self.add_line(title, sourcename)
+        self.add_line(char * len(title), sourcename)
+        self.add_line(u'', sourcename)
+
     def generate(self, more_content=None, real_modname=None,
                  check_module=False, all_members=False):
         if not self.parse_name():
@@ -201,15 +214,9 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
 
         sourcename = self.get_sourcename()
 
-        # start with blank line
-        self.add_line(u'', sourcename)
-        title = '%s module reference' % self.format_name()
-
         # add title
-        self.add_line(u'='*len(title), sourcename)
-        self.add_line(title, sourcename)
-        self.add_line(u'='*len(title), sourcename)
-        self.add_line(u'', sourcename)
+        title = '%s module reference' % self.format_name()
+        self.add_title(title, char='=')
 
         # module directive
         self.add_line(u'.. f:module:: %s' % self.format_name(), sourcename)
@@ -220,16 +227,17 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
         self.add_content(None)
 
         # we want a brief description of types/functions here
+        self.add_title('Functions/Subroutines', char='-')
         self.document_members(all_members)
 
         # detailed description
-        self.add_line(u'', sourcename)
-        self.add_line(u'.. rubric:: Detailed Description', sourcename)
-        self.add_line(u'', sourcename)
+        self.add_line(u'.. _`More...`:', sourcename)
+        self.add_title('Detailed Description', char='-')
         self.brief = False
         self.add_content(more_content)
 
         # member doc
+        self.add_title('Function/Subroutine Documentation', char='-')
         self.document_members(all_members)
 
 
