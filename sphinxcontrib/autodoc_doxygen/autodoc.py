@@ -247,11 +247,8 @@ class DoxygenMethodDocumenter(DoxygenDocumenter):
         name = self.format_name()
         sourcename = self.get_sourcename()
 
-        typefield = self.object.find('type').text
-        if typefield is None:
-            print('ERROR: null typefield in %s %s' % (name, sourcename))
-            return
-
+        # determine which directive to use from the typefield
+        typefield = self.get_typefield()
         directive = 'subroutine' if 'subroutine' in typefield else 'function'
 
         self.add_line(u'.. %s:%s:: %s%s' % (domain, directive, name, sig),
@@ -290,15 +287,24 @@ class DoxygenMethodDocumenter(DoxygenDocumenter):
 
         return doc
 
+    def get_typefield(self):
+        return ' '.join(self.object.find('definition').text.split()[:-1])
+
     def format_name(self):
         # we just want to get the bare part of the "type" field
         # i.e. subroutine or <type> function
-        typefield = self.object.find('type').text
+        typefield = self.get_typefield()
+
         if typefield is None:
             rtype = None
         elif 'function' in typefield:
             # get the return type
-            rtype = re.search(r'(\S+)\s+function', typefield).group(0)
+            m = re.search(r'(\S+)\s+function', typefield)
+            if m:
+                rtype = m.group(0)
+            else:
+                rtype = 'function'
+                print('ERROR searching for return type in', typefield)
         else:
             rtype = 'subroutine' if 'subroutine' in typefield else 'unknown'
 
