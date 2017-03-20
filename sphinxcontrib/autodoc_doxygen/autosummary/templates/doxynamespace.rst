@@ -1,5 +1,11 @@
 .. autodoxymodule:: {{ fullname }}
    :members:
+   {% if methods %}
+   :methods:
+   {% endif %}
+   {% if types %}
+   :types:
+   {% endif %}
 
    {% if types %}
    ----------

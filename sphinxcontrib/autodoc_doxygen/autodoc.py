@@ -2,6 +2,7 @@ from __future__ import print_function, absolute_import, division
 
 import re
 
+from docutils.parsers.rst import directives
 from six import itervalues
 from lxml import etree as ET
 from sphinx.ext.autodoc import Documenter, AutoDirective, members_option, ALL
@@ -112,6 +113,8 @@ class DoxygenModuleDocumenter(DoxygenDocumenter):
 
     option_spec = {
         'members': members_option,
+        'methods': directives.flag,
+        'types': directives.flag,
     }
 
     @classmethod
