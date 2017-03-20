@@ -70,8 +70,8 @@ class DoxygenDocumenter(Documenter):
         """
         want_all = all_members or self.options.inherited_members or \
             self.options.members is ALL
+        members = all_members
         # find out which members are documentable
-        members_check_module, members = self.get_object_members(want_all)
 
         # remove members given by exclude-members
         if self.options.exclude_members:
@@ -98,7 +98,7 @@ class DoxygenDocumenter(Documenter):
         for documenter, isattr in memberdocumenters:
             documenter.generate(
                 all_members=True, real_modname=self.real_modname,
-                check_module=members_check_module and not isattr)
+                check_module=False and not isattr)
 
         # reset current objects
         self.env.temp_data['autodoc:module'] = None
@@ -168,17 +168,7 @@ class DoxygenModuleDocumenter(DoxygenDocumenter):
         return doc
 
     def get_object_members(self, want_all):
-        all_members = self.object.xpath('.//sectiondef[@kind="func" '
-            'or @kind="public-static-func"]/memberdef[@kind="function"]')
-
-        if want_all:
-            return False, ((m.find('name').text, m) for m in all_members)
-        else:
-            if not self.options.members:
-                return False, []
-            else:
-                return False, ((m.find('name').text, m) for m in all_members
-                               if m.find('name').text in self.options.members)
+        pass
 
     def filter_members(self, members, want_all):
         ret = []
@@ -186,8 +176,23 @@ class DoxygenModuleDocumenter(DoxygenDocumenter):
             ret.append((membername, member, False))
         return ret
 
-    def document_members(self, all_members=False):
-        super().document_members(all_members=all_members)
+    def document_members(self, member_type, all_members=False):
+        if member_type == 'func':
+            all_members = self.object.xpath('./sectiondef[@kind="func" '
+                'or @kind="public-static-func"]/memberdef[@kind="function"]')
+
+            members = [(m.find('name').text, m) for m in all_members]
+
+        elif member_type == 'type':
+            classes = self.object.findall('./innerclass')
+            members = []
+            for c in classes:
+
+                class_obj = get_doxygen_root().find('./compounddef[@id="%s"]' % c.get('refid'))
+                if class_obj.get('kind') == 'type':
+                    members.append((class_obj.find('compoundname').text, class_obj))
+
+        super().document_members(all_members=members)
         # Uncomment to view the generated rst for the class.
         # print('\n'.join(self.directive.result))
 
@@ -239,9 +244,14 @@ class DoxygenModuleDocumenter(DoxygenDocumenter):
         self.brief = False
         self.add_content(None)
 
+        if 'types' in self.options:
+            self.add_title('Type Documentation', char='-')
+            self.document_members('type', all_members)
+
         # member doc
-        self.add_title('Function/Subroutine Documentation', char='-')
-        self.document_members(all_members)
+        if 'methods' in self.options:
+            self.add_title('Function/Subroutine Documentation', char='-')
+            self.document_members('func', all_members)
 
 
 class DoxygenMethodDocumenter(DoxygenDocumenter):
