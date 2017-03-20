@@ -6,6 +6,7 @@ from functools import reduce
 from itertools import count, groupby
 
 from docutils import nodes
+from docutils.parsers.rst import directives
 from docutils.statemachine import ViewList
 from sphinx import addnodes
 from sphinx.ext.autosummary import Autosummary, autosummary_table
@@ -79,6 +80,10 @@ def get_documenter(obj, full_name):
 
 
 class DoxygenAutosummary(Autosummary):
+    option_spec = {
+        'type': directives.unchanged
+    }
+
     def get_items(self, names):
         """Try to import the given names, and return a list of
         ``[(name, signature, summary_string, real_name), ...]``.
@@ -184,7 +189,7 @@ class DoxygenAutosummary(Autosummary):
         table, table_spec, append_row = self.get_tablespec()
         for name, sig, summary, real_name in items:
             # TODO: we'll have to resolve the type of link here, awkward!
-            qualifier = 'f:func'
+            qualifier = 'f:' + self.options['type']
             col1 = ':%s:`%s`' % (qualifier, name)
             col2 = summary
             append_row(col1, col2)

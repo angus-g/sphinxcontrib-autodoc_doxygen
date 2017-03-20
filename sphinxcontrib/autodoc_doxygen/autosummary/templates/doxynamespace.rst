@@ -7,6 +7,7 @@
    ----------
 
    .. autodoxysummary::
+      :type: type
 
    {% for item in types %}
       ~{{ item }}
@@ -19,6 +20,8 @@
    ---------------------
 
    .. autodoxysummary::
+      :type: func
+
    {% for item in methods %}
       ~{{ fullname }}::{{ item }}
    {%- endfor %}
