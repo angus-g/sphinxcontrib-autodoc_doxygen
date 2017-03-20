@@ -104,10 +104,10 @@ class DoxygenDocumenter(Documenter):
         self.env.temp_data['autodoc:class'] = None
 
 
-class DoxygenClassDocumenter(DoxygenDocumenter):
-    objtype = 'doxyclass'
-    directivetype = 'class'
-    domain = 'cpp'
+class DoxygenModuleDocumenter(DoxygenDocumenter):
+    objtype = 'doxymodule'
+    directivetype = 'module'
+    domain = 'f'
     priority = 100
 
     option_spec = {
@@ -133,7 +133,7 @@ class DoxygenClassDocumenter(DoxygenDocumenter):
         xpath_query = './compounddef/compoundname[text()="%s"]/..' % self.fullname
         match = get_doxygen_root().xpath(xpath_query)
         if len(match) != 1:
-            raise ExtensionError('[autodoc_doxygen] could not find class (fullname="%s"). I tried'
+            raise ExtensionError('[autodoc_doxygen] could not find module (fullname="%s"). I tried'
                                  'the following xpath: "%s"' % (self.fullname, xpath_query))
 
         self.object = match[0]

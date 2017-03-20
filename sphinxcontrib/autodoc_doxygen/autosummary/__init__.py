@@ -11,7 +11,7 @@ from sphinx import addnodes
 from sphinx.ext.autosummary import Autosummary, autosummary_table
 
 from .. import get_doxygen_root
-from ..autodoc import DoxygenMethodDocumenter, DoxygenClassDocumenter
+from ..autodoc import DoxygenMethodDocumenter, DoxygenModuleDocumenter
 from ..xmlutils import format_xml_paragraph
 
 
@@ -72,7 +72,8 @@ def get_documenter(obj, full_name):
     if obj.tag == 'memberdef' and obj.get('kind') == 'function':
         return DoxygenMethodDocumenter
     elif obj.tag == 'compounddef':
-        return DoxygenClassDocumenter
+        # XXX: this will need to handle types/interfaces too
+        return DoxygenModuleDocumenter
 
     raise NotImplementedError(obj.tag)
 

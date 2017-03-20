@@ -1,4 +1,4 @@
-.. autodoxyclass:: {{ fullname }}
+.. autodoxymodule:: {{ fullname }}
    :members:
 
    {% if methods %}
