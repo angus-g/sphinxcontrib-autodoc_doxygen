@@ -1,6 +1,23 @@
 from __future__ import print_function, absolute_import, division
 from . import get_doxygen_root
 
+def flatten(xmlnode):
+    # <xmlnode>this.text<child0>child0.text</child0>child0.tail...</xmlnode>
+
+    t = ''
+
+    # text of this node
+    if xmlnode.text is not None:
+        t += xmlnode.text
+
+    # process all children recursively
+    for n in xmlnode:
+        t += ' '
+        t += flatten(n)
+        t += ' '
+        t += n.tail
+
+    return t
 
 def format_xml_paragraph(xmlnode):
     """Format an Doxygen XML segment (principally a detaileddescription)
