@@ -149,9 +149,7 @@ class _DoxygenXmlParagraphFormatter(object):
 
     def visit_simplesect(self, node):
         if node.get('kind') == 'return':
-            # XXX we need  type information here or the fortran domain crashes
-            #self.lines.append(':returns: ')
-            self.lines.append('returns: ')
+            self.lines.append(':returns: ')
             self.continue_line = True
         self.generic_visit(node)
 
