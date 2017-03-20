@@ -12,6 +12,9 @@ from sphinx.util.osutil import ensuredir
 
 from . import import_by_name, get_doxygen_root
 
+def is_type(node):
+    def_node = get_doxygen_root().find('./compounddef[@id="%s"]' % node.get('refid'))
+    return def_node.get('kind') == 'type'
 
 def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                               base_path=None, builder=None, template_dir=None,
@@ -82,7 +85,8 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                 ns['enums'] = [e.text for e in obj.findall('.//sectiondef[@kind="public-type"]/memberdef[@kind="enum"]/name')]
                 ns['objtype'] = 'class'
             elif obj.tag == 'compounddef' and obj.get('kind') == 'namespace':
-                ns['methods'] = [e.text for e in obj.findall('.//sectiondef[@kind="func"]/memberdef[@kind="function"]/name')]
+                ns['methods'] = [e.text for e in obj.findall('./sectiondef[@kind="func"]/memberdef[@kind="function"]/name')]
+                ns['types'] = [e.text for e in obj.findall('./innerclass') if is_type(e)]
                 ns['objtype'] = 'namespace'
             else:
                 continue
