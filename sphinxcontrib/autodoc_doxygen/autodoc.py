@@ -8,7 +8,7 @@ from sphinx.ext.autodoc import Documenter, AutoDirective, members_option, ALL
 from sphinx.errors import ExtensionError
 
 from . import get_doxygen_root
-from .xmlutils import format_xml_paragraph
+from .xmlutils import format_xml_paragraph, flatten
 
 
 class DoxygenDocumenter(Documenter):
@@ -333,6 +333,78 @@ class DoxygenMethodDocumenter(DoxygenDocumenter):
     def format_signature(self):
         args = self.object.find('argsstring').text
         return args
+
+    def document_members(self, all_members=False):
+        pass
+
+class DoxygenTypeDocumenter(DoxygenDocumenter):
+    objtype = 'doxytype'
+    directivetype = 'type'
+    domain = 'f'
+    priority = 100
+
+    @classmethod
+    def can_document_member(cls, member, membername, isattr, parent):
+        if ET.iselement(member) and member.tag == 'compounddef' and member.get('kind') == 'type':
+            return True
+        return False
+
+    def import_object(self):
+        if ET.iselement(self.object):
+            return True
+        return False
+
+    def parse_id(self, id):
+        self.object = get_doxygen_root().find('./compounddef[@id="%s"]' % id)
+        self.fullname = self.object.find('compoundname').text
+        self.modname, self.objname = self.fullname.rsplit('::')
+
+        return False
+
+    def format_name(self):
+        return self.objname
+
+    def add_directive_header(self, sig):
+        """Add the directive header and options to the generated content."""
+        domain = self.domain
+        directive = 'type'
+        name = self.format_name()
+        sourcename = self.get_sourcename()
+
+        self.add_line(u'.. %s:%s:: %s' % (domain, directive, name),
+                      sourcename)
+
+    def get_doc(self, encoding):
+        desc = [format_xml_paragraph(self.object.find('briefdescription'))]
+
+        for member in self.object.findall('./sectiondef/memberdef'):
+            attribs = flatten(member.find('type')).strip().split(', ')
+            name = member.find('name').text
+            shape = ''
+            rest = ''
+
+            # very rudimentary parsing of type attributes
+            # into the Fortran domain format
+            for word in attribs:
+                if word.startswith('dimension'):
+                    shape = word[len('dimension'):].replace(':', r'\:')
+
+            extras = [w for w in attribs[1:] if not w.startswith('dimension')]
+            if member.get('prot') == 'private':
+                extras.append('private')
+            if len(extras):
+                rest = ' [' + ', '.join(extras) + ']'
+
+            field = ':typefield %s%s %s%s:' % (attribs[0], shape, name, rest)
+
+            # look for the brief description paragraph
+            brief = member.find('briefdescription/para')
+            if brief is not None:
+                field += ' ' + brief.text
+
+            desc.append([field])
+
+        return desc
 
     def document_members(self, all_members=False):
         pass
