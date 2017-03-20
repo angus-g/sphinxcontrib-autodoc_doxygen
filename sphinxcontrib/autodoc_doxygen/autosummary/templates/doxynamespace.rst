@@ -11,7 +11,7 @@
 
    {% for item in types %}
       ~{{ item }}
-   {%- endfor %}
+   {% endfor %}
    {% endif %}
 
    {% if methods %}
@@ -24,5 +24,5 @@
 
    {% for item in methods %}
       ~{{ fullname }}::{{ item }}
-   {%- endfor %}
+   {% endfor %}
    {% endif %}
