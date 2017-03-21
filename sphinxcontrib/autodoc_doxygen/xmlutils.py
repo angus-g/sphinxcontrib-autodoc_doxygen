@@ -254,7 +254,9 @@ class _DoxygenXmlParagraphFormatter(object):
         if c is not None:
             return self.visit_preformatted(c)
 
-        self.lines[-1] += '``' + node.text + '``'
+        # I don't think we can put links inside
+        # computeroutput text...
+        self.lines[-1] += '``' + flatten(node) + '``'
 
     def visit_xrefsect(self, node):
         title = node.find('xreftitle').text
