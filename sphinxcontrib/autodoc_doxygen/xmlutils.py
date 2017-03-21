@@ -70,7 +70,11 @@ class _DoxygenXmlParagraphFormatter(object):
                 kind = 'func'
         elif node.get('kindref') == 'compound':
             ref = get_doxygen_root().find('./compounddef[@id="%s"]' % refid)
-            kind = 'mod'
+            if ref is not None:
+                if ref.get('kind') == 'namespace':
+                    kind = 'mod'
+                elif ref.get('kind') == 'type':
+                    kind = 'type'
         else:
             # we probably don't get here
             print('warning: slow ref search!')
@@ -78,13 +82,15 @@ class _DoxygenXmlParagraphFormatter(object):
 
         # get name of target
         if ref is not None:
+            name_node = None
+
             if kind == 'func':
                 name_node = ref.find('./name')
-            elif kind == 'mod':
+            elif kind == 'mod' or kind == 'type':
                 name_node = ref.find('./compoundname')
 
             if name_node is not None:
-                real_name = name_node.text
+                real_name = name_node.text.split('::')[-1]
             else:
                 self.lines[-1] += '(unimplemented link)' + node.text
                 return
