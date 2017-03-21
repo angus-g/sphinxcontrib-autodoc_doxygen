@@ -109,6 +109,30 @@ class _DoxygenXmlParagraphFormatter(object):
 
         self.lines[-1] += ''.join(val)
 
+    def visit_ulink(self, node):
+        self.para_text('`%s <%s>`_' % (node.text, node.get('url')))
+
+    def visit_emphasis(self, node):
+        self.para_text('*%s*' % node.text)
+
+    def role_text(self, node, role):
+        # XXX we should probably escape preceeding whitespace...
+        # but there's no backward equivalent of `tail`
+        text = ' :%s:`%s`' % (role, node.text)
+
+        if node.tail is not None and not node.tail.startswith(' '):
+            # escape following whitespace
+            text += '\\'
+
+        text += ' ' # interpretered text needs surrounding whitespace
+        self.para_text(text)
+
+    def visit_superscript(self, node):
+        self.role_text(node, 'superscript')
+
+    def visit_subscript(self, node):
+        self.role_text(node, 'subscript')
+
     def para_text(self, text):
         if text is not None:
             if self.continue_line:
@@ -194,7 +218,8 @@ class _DoxygenXmlParagraphFormatter(object):
         self.visit_sect(node, '"')
 
     def visit_listitem(self, node):
-        self.lines.append('   - ')
+        char = '*' if node.getparent().tag == 'itemizedlist' else '#'
+        self.lines.append('   %s ' % char)
         self.continue_line = True
         self.generic_visit(node)
 
@@ -208,6 +233,9 @@ class _DoxygenXmlParagraphFormatter(object):
         lines = ''.join(segment).split('\n')
         self.lines.extend(('.. code-block:: C++', ''))
         self.lines.extend(['  ' + l for l in lines])
+
+    def visit_verbatim(self, node):
+        self.visit_preformatted(node)
 
     def visit_computeroutput(self, node):
         c = node.find('preformatted')
