@@ -11,6 +11,7 @@ from sphinx.jinja2glue import BuiltinTemplateLoader
 from sphinx.util.osutil import ensuredir
 
 from . import import_by_name, get_doxygen_root
+from ..xmlutils import format_xml_paragraph
 
 def is_type(node):
     def_node = get_doxygen_root().find('./compounddef[@id="%s"]' % node.get('refid'))
@@ -75,6 +76,8 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                 template_name = 'doxyclass.rst'
             elif obj.tag == 'compounddef' and obj.get('kind') in ['namespace', 'module']:
                 template_name = 'doxynamespace.rst'
+            elif obj.tag == 'compounddef' and obj.get('kind') == 'page':
+                template_name = 'doxypage.rst'
             else:
                 raise NotImplementedError('No template for %s (%s)' % (obj, obj.get('kind')))
 
@@ -89,6 +92,9 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                 ns['methods'] = [e.text for e in obj.findall('./sectiondef[@kind="func"]/memberdef[@kind="function"]/name')]
                 ns['types'] = [e.text for e in obj.findall('./innerclass') if is_type(e)]
                 ns['objtype'] = 'namespace'
+            elif obj.tag == 'compounddef' and obj.get('kind') == 'page':
+                ns['title'] = obj.find('title').text
+                ns['text'] = format_xml_paragraph(obj.find('detaileddescription'))
             else:
                 continue
                 raise NotImplementedError(obj)
@@ -118,7 +124,9 @@ def find_autosummary_in_files(filenames):
     See `find_autosummary_in_lines`.
     """
     # todo: break when this doesn't exist
-    modules = get_doxygen_root().findall('./compound[@kind="namespace"]')
+    # look for modules and standalone documentation pages, but *not* the index page
+    # itself (which it links to from itself for some reason...)
+    modules = get_doxygen_root().xpath('./compound[@kind="namespace" or @kind="page" and not(@refid="indexpage")]')
     # list of (name, toctree, template)
     documented = [(m.find('name').text, None) for m in modules]
     return documented
