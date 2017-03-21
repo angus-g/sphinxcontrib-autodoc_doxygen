@@ -220,9 +220,14 @@ class _DoxygenXmlParagraphFormatter(object):
 
     def visit_listitem(self, node):
         char = '*' if node.getparent().tag == 'itemizedlist' else '#'
-        self.lines.append('   %s ' % char)
+        self.lines.append(char + ' ')
         self.continue_line = True
         self.generic_visit(node)
+
+    def preformat_text(self, lines):
+        self.lines.extend(('::', ''))
+        self.lines.extend(['  ' + l for l in lines])
+        self.lines.append('')
 
     def visit_preformatted(self, node):
         segment = [node.text if node.text is not None else '']
@@ -232,8 +237,13 @@ class _DoxygenXmlParagraphFormatter(object):
                 segment.append(n.tail)
 
         lines = ''.join(segment).split('\n')
-        self.lines.extend(('.. code-block:: C++', ''))
-        self.lines.extend(['  ' + l for l in lines])
+        self.preformat_text(lines)
+
+    def visit_programlisting(self, node):
+        lines = []
+        for n in node.getchildren():
+            lines.append(flatten(n))
+        self.preformat_text(lines)
 
     def visit_verbatim(self, node):
         self.visit_preformatted(node)
