@@ -14,8 +14,9 @@ def flatten(xmlnode):
     for n in xmlnode:
         t += ' '
         t += flatten(n)
-        t += ' '
-        t += n.tail
+        if n.tail is not None:
+            t += ' '
+            t += n.tail
 
     return t
 
