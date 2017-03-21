@@ -311,6 +311,16 @@ class DoxygenMethodDocumenter(DoxygenDocumenter):
         if not self.brief:
             doc += [format_xml_paragraph(self.object.find('detaileddescription'))]
 
+            # add references/referencedby
+            references = self.object.findall('references')
+            for ref in references:
+                name = ref.text
+                doc.append([':callto: :f:func:`%s <%s>`' % (name, name.split('::')[-1])])
+            referencedby = self.object.findall('referencedby')
+            for ref in referencedby:
+                name = ref.text
+                doc.append([':calledfrom: :f:func:`%s <%s>`' % (name, name.split('::')[-1])])
+
         return doc
 
     def get_typefield(self):
