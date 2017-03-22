@@ -160,10 +160,12 @@ class DoxygenModuleDocumenter(DoxygenDocumenter):
 
         doc = [format_xml_paragraph(description)]
 
+        if not any(len(d.strip()) for d in doc[0]):
+            doc.append(['<undocumented>', ''])
+
         if self.brief:
-            doc.append(['`More...`_'])
             # new line to separate from further content
-            doc.append([''])
+            doc.append(['`More...`_', ''])
 
         return doc
 
