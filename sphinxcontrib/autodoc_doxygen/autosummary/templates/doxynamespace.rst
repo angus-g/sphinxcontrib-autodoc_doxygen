@@ -13,7 +13,7 @@
    ----------
 
    .. autodoxysummary::
-      :type: type
+      :kind: type
 
    {% for item in types %}
       ~{{ item }}
@@ -26,7 +26,7 @@
    ---------------------
 
    .. autodoxysummary::
-      :type: func
+      :kind: func
 
    {% for item in methods %}
       ~{{ fullname }}::{{ item }}

@@ -81,7 +81,7 @@ def get_documenter(obj, full_name):
 
 class DoxygenAutosummary(Autosummary):
     option_spec = {
-        'type': directives.unchanged
+        'kind':         directives.unchanged,
     }
 
     def get_items(self, names):
@@ -188,13 +188,11 @@ class DoxygenAutosummary(Autosummary):
         """
         table, table_spec, append_row = self.get_tablespec()
         for name, sig, summary, real_name in items:
-            # TODO: we'll have to resolve the type of link here, awkward!
-            qualifier = 'f:' + self.options['type']
+            qualifier = 'f:' + self.options['kind']
             col1 = ':%s:`%s`' % (qualifier, name)
             col2 = summary
             append_row(col1, col2)
 
-        self.result.append('   .. rubric: sdsf', 0)
         return [table_spec, table]
 
 
