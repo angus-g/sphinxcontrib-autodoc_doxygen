@@ -53,8 +53,8 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
     # keep track of new files
     new_files = []
 
-    for name, template_name in sorted(set(items), key=str):
-        path = output_dir or os.path.abspath(toctree)
+    for name, path, template_name in sorted(set(items), key=str):
+        path = path or output_dir or os.path.abspath(toctree)
         ensuredir(path)
 
         try:
@@ -69,7 +69,6 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
         if os.path.isfile(fn):
             continue
 
-        new_files.append(fn)
 
         if template_name is None:
             if obj.tag == 'compounddef' and obj.get('kind') == 'class':
@@ -126,9 +125,12 @@ def find_autosummary_in_files(filenames):
     # todo: break when this doesn't exist
     # look for modules and standalone documentation pages, but *not* the index page
     # itself (which it links to from itself for some reason...)
-    modules = get_doxygen_root().xpath('./compound[@kind="namespace" or @kind="page" and not(@refid="indexpage")]')
-    # list of (name, toctree, template)
-    documented = [(m.find('name').text, None) for m in modules]
+    documented = []
+    for filename in filenames:
+        with codecs.open(filename, 'r', encoding='utf-8', errors='ignore') as f:
+            lines = f.read().splitlines()
+            documented.extend(find_autosummary_in_lines(lines, filename=filename))
+
     return documented
 
 
@@ -143,16 +145,19 @@ def find_autosummary_in_lines(lines, module=None, filename=None):
     *template* ``None`` if the directive does not have the
     corresponding options set.
     """
-    autosummary_re = re.compile(r'^(\s*)\.\.\s+autodoxysummary::\s*')
+    autosummary_re      = re.compile(r'^(\s*)\.\.\s+autodoxysummary::\s*')
+    toctree_arg_re      = re.compile(r'^\s+:toctree:\s*(.*?)\s*$')
+    template_arg_re     = re.compile(r'^\s+:template:\s*(.*?)\s*$')
+    kind_arg_re         = re.compile(r'^\s+:kind:\s*(.*?)\s*$')
+    generate_arg_re     = re.compile(r'^\s+:generate:\s*$')
     autosummary_item_re = re.compile(r'^\s+(~?[_a-zA-Z][a-zA-Z0-9_.:]*)\s*.*?')
-    toctree_arg_re = re.compile(r'^\s+:toctree:\s*(.*?)\s*$')
-    template_arg_re = re.compile(r'^\s+:template:\s*(.*?)\s*$')
 
     documented = []
 
     toctree = None
     template = None
     in_autosummary = False
+    generate = False
     base_indent = ""
 
     for line in lines:
@@ -168,6 +173,27 @@ def find_autosummary_in_lines(lines, module=None, filename=None):
             m = template_arg_re.match(line)
             if m:
                 template = m.group(1).strip()
+                continue
+
+            m = generate_arg_re.match(line)
+            if m:
+                generate = True
+                continue
+
+            m = kind_arg_re.match(line)
+            if m and generate:
+                kind = m.group(1).strip()
+                xpath = None
+                if kind == 'mod':
+                    xpath = './compound[@kind="namespace"]'
+                elif kind == 'page':
+                    xpath = './compound[@kind="page" and not(@refid="indexpage")]'
+
+                if xpath is not None:
+                    results = get_doxygen_root().xpath(xpath)
+                    for result in results:
+                        documented.append((result.find('name').text, toctree, template))
+
                 continue
 
             if line.strip().startswith(':'):
@@ -192,6 +218,7 @@ def find_autosummary_in_lines(lines, module=None, filename=None):
             base_indent = m.group(1)
             toctree = None
             template = None
+            generate = False
             continue
 
     return documented

@@ -81,7 +81,11 @@ def get_documenter(obj, full_name):
 
 class DoxygenAutosummary(Autosummary):
     option_spec = {
+        'toctree':      directives.unchanged,
+        'nosignatures': directives.flag,
+        'template':     directives.unchanged,
         'kind':         directives.unchanged,
+        'generate':     directives.flag,
     }
 
     def get_items(self, names):
@@ -90,6 +94,14 @@ class DoxygenAutosummary(Autosummary):
         """
         env = self.state.document.settings.env
         items = []
+
+        if 'generate' in self.options:
+            # don't generate a summary for pages
+            if self.options['kind'] == 'page':
+                return []
+
+            modules = get_doxygen_root().xpath('./compound[@kind="namespace"]')
+            names = [m.find('name').text for m in modules]
 
         names_and_counts = reduce(operator.add,
             [tuple(zip(g, count())) for _, g in groupby(names)]) # type: List[(Str, Int)]
