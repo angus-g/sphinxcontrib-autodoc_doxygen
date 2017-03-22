@@ -134,6 +134,17 @@ class _DoxygenXmlParagraphFormatter(object):
         text += ' ' # interpretered text needs surrounding whitespace
         self.para_text(text)
 
+    def visit_image(self, node):
+        if len(node.text.strip()):
+            type = 'figure'
+        else:
+            type = 'image'
+
+        self.lines.append('.. %s:: /images/%s' % (type, node.get('name')))
+
+        if type == 'figure':
+            self.lines.extend(['', node.text])
+
     def visit_superscript(self, node):
         self.role_text(node, 'superscript')
 
