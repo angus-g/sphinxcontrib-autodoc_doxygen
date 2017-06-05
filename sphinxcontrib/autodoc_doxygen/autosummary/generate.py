@@ -4,6 +4,7 @@ import codecs
 import os
 import re
 import sys
+import datetime
 
 from jinja2 import FileSystemLoader
 from jinja2.sandbox import SandboxedEnvironment
@@ -109,6 +110,7 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
 
             rendered = template.render(**ns)
             f.write(rendered)
+            f.write('\n..\n   {}'.format(datetime.datetime.now()))
 
     # descend recursively to new files
     if new_files:
