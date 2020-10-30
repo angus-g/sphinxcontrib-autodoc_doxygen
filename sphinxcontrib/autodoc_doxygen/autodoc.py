@@ -5,7 +5,7 @@ import re
 from docutils.parsers.rst import directives
 from six import itervalues
 from lxml import etree as ET
-from sphinx.ext.autodoc import Documenter, AutoDirective, members_option, ALL
+from sphinx.ext.autodoc import Documenter, members_option, ALL
 from sphinx.errors import ExtensionError
 
 from . import get_doxygen_root
@@ -81,7 +81,7 @@ class DoxygenDocumenter(Documenter):
         # document non-skipped members
         memberdocumenters = []
         for (mname, member, isattr) in self.filter_members(members, want_all):
-            classes = [cls for cls in itervalues(AutoDirective._registry)
+            classes = [cls for cls in itervalues(self.env.app.registry.documenters)
                        if cls.can_document_member(member, mname, isattr, self)]
             if not classes:
                 # don't know how to document this member
@@ -148,7 +148,7 @@ class DoxygenModuleDocumenter(DoxygenDocumenter):
     def format_name(self):
         return self.fullname
 
-    def get_doc(self, encoding):
+    def get_doc(self):
         if self.brief:
             description = self.object.find('briefdescription')
         else:
@@ -307,7 +307,7 @@ class DoxygenMethodDocumenter(DoxygenDocumenter):
 
         return False
 
-    def get_doc(self, encoding):
+    def get_doc(self):
         doc = [format_xml_paragraph(self.object.find('briefdescription'))]
         # add parameter documentation (in detaileddescription) for main function documentation
         if not self.brief:
@@ -399,7 +399,7 @@ class DoxygenTypeDocumenter(DoxygenDocumenter):
         self.add_line(u'.. %s:%s:: %s' % (domain, directive, name),
                       sourcename)
 
-    def get_doc(self, encoding):
+    def get_doc(self):
         desc = [format_xml_paragraph(self.object.find('briefdescription'))]
 
         for member in self.object.findall('./sectiondef/memberdef'):
